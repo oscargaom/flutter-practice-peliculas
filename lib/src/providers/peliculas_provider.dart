@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:peliculas/src/models/actores_model.dart';
 import 'package:peliculas/src/models/pelicula_model.dart';
 import 'package:http/http.dart' as http;
 
@@ -8,15 +9,19 @@ class PeliculasProvider {
   String _url = 'api.themoviedb.org';
   String _language = 'es-ES';
   int _popularesPage = 0;
-  
+  bool cargando = false;
+
   List<Pelicula> _listaPeliculasPopulares = new List();
 
-  final _peliculasPopularesStreamController = new StreamController<List<Pelicula>>.broadcast();
+  final _peliculasPopularesStreamController =
+      new StreamController<List<Pelicula>>.broadcast();
 
-  Function(List<Pelicula>) get peliculasPopularesSink => _peliculasPopularesStreamController.sink.add;
-  Stream<List<Pelicula>> get peliculasPopularesStream => _peliculasPopularesStreamController.stream;
+  Function(List<Pelicula>) get peliculasPopularesSink =>
+      _peliculasPopularesStreamController.sink.add;
+  Stream<List<Pelicula>> get peliculasPopularesStream =>
+      _peliculasPopularesStreamController.stream;
 
-  void disposeStreams(){
+  void disposeStreams() {
     _peliculasPopularesStreamController?.close();
   }
 
@@ -44,15 +49,51 @@ class PeliculasProvider {
   Future<List<Pelicula>> getPopulares() async {
     _popularesPage++;
 
-    final url = Uri.https(_url, '3/movie/popular',
-        {'api_key': _apikey, 'language': _language, 'page': _popularesPage.toString()});
+    // print('cargando value: $cargando');
+    if (cargando) {
+      // print('lista vacía');
+      return [];
+    }
+
+    // print('Se va a realizar la carga y activar candado');
+    cargando = true;
+    // print('candado activado $cargando');
+
+    final url = Uri.https(_url, '3/movie/popular', {
+      'api_key': _apikey,
+      'language': _language,
+      'page': _popularesPage.toString()
+    });
 
     final resp = await _procesarRespuesta(url);
 
     _listaPeliculasPopulares.addAll(resp);
+    // print('Se llamo al endpoint');
+    peliculasPopularesSink(resp);
 
-     peliculasPopularesSink(resp);
+    cargando = false;
+    // print('candado desactivado $cargando');
 
     return resp;
+  }
+
+  Future<List<Actor>> getCats(int peliculaId) async {
+    final url = Uri.https(_url, '3/movie/$peliculaId/credits',
+        {'api_key': _apikey, 'language': _language});
+
+    final resp = await http.get(url);
+
+    final decodeData = json.decode(resp.body);
+
+    final cast = Cast.fromJsonList(decodeData['cast']);
+
+    return cast.actores;
+  }
+
+  Future<List<Pelicula>> buscarPelicula(String query) async {
+    final url = Uri.https(_url, '3/search/movie',
+        {'api_key': _apikey, 'language': _language, 'query': query});
+
+    return await _procesarRespuesta(url);
   }
 }

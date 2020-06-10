@@ -27,27 +27,26 @@ class Dates {
 }
 
 class Peliculas {
-  
   List<Pelicula> items = new List();
 
   Peliculas();
 
-  Peliculas.fromJsonList(List<dynamic> jsonList){
-
-    if (jsonList == null){
+  Peliculas.fromJsonList(List<dynamic> jsonList) {
+    if (jsonList == null) {
       return;
-    } 
+    }
 
-    for (var item in jsonList){
+    for (var item in jsonList) {
       final pelicula = new Pelicula.fromJsonMap(item);
       items.add(pelicula);
     }
-
   }
-
 }
 
 class Pelicula {
+
+  String uniqueId;
+
   double popularity;
   int voteCount;
   bool video;
@@ -98,8 +97,17 @@ class Pelicula {
   }
 
   String getPosterImg() {
-    if (posterPath != null){ 
+    if (posterPath != null) {
       return 'https://image.tmdb.org/t/p/w500/${posterPath}';
+    } else {
+      // Imagen vacía.
+      return 'https://vectorified.com/images/empty-file-icon-31.png';
+    }
+  }
+
+  String getBackdropPath() {
+    if (posterPath != null) {
+      return 'https://image.tmdb.org/t/p/w500/${backdropPath}';
     } else {
       // Imagen vacía.
       return 'https://vectorified.com/images/empty-file-icon-31.png';
